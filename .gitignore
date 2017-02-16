@@ -1,0 +1,9 @@
+# CMake
+CMakeCache.txt
+CMakeFiles/*
+Makefile
+cmake_install.cmake
+gtoc1
+
+# OS specific stuff
+.DS_Store
