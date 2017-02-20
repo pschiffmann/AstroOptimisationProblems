@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------------ //
-// This source file is part of the 'ESA Advanced Concepts Team's			//
+// This source file is part of the 'ESA Advanced Concepts Team's            //
 // Space Mechanics Toolbox' software.                                       //
 //                                                                          //
 // The source files are for research use only,                              //
@@ -11,18 +11,15 @@
 #ifndef TIME_2_DISTANCE_H
 #define TIME_2_DISTANCE_H
 
-#include <math.h>
+#include "propagateKEP.h"
+#include <cctype>
 #include <float.h>
 #include <iostream>
+#include <math.h>
 #include <vector>
-#include <cctype>
-#include "propagateKEP.h"
 
 using namespace std;
 
-double time2distance(const double*, const double*, double);
+double time2distance(const double *, const double *, double);
 
 #endif
-
-
-

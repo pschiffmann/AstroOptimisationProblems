@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------------ //
-// This source file is part of the 'ESA Advanced Concepts Team's			//
+// This source file is part of the 'ESA Advanced Concepts Team's            //
 // Space Mechanics Toolbox' software.                                       //
 //                                                                          //
 // The source files are for research use only,                              //
@@ -15,8 +15,8 @@
 
 using namespace std;
 
-void Planet_Ephemerides_Analytical (const double, const int, double*, double*);
+void Planet_Ephemerides_Analytical(const double, const int, double *, double *);
 
-void Custom_Eph(const double, const double, const double[], double*, double*);
+void Custom_Eph(const double, const double, const double[], double *, double *);
 
 #endif

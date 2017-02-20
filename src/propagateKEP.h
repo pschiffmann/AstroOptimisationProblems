@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------------ //
-// This source file is part of the 'ESA Advanced Concepts Team's			//
+// This source file is part of the 'ESA Advanced Concepts Team's            //
 // Space Mechanics Toolbox' software.                                       //
 //                                                                          //
 // The source files are for research use only,                              //
@@ -11,23 +11,18 @@
 #ifndef PROPAGATEKEP_H
 #define PROPAGATEKEP_H
 
-
 #include "Astro_Functions.h"
 
-void propagateKEP(const double *, const double *, double, double,
-				  double *, double *);
+void propagateKEP(const double *, const double *, double, double, double *,
+                  double *);
 
-void IC2par(const double*, const double*, double, double*);
+void IC2par(const double *, const double *, double, double *);
 
-void par2IC(const double*, double, double*, double*);
+void par2IC(const double *, double, double *, double *);
 
 // Returns the cross product of the vectors X and Y.
 // That is, z = X x Y.  X and Y must be 3 element
 // vectors.
-void cross(const double*, const double*, double*);
+void cross(const double *, const double *, double *);
 
 #endif
-
-
-
-
