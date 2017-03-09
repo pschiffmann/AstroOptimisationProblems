@@ -1,20 +1,12 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(AstroOptimisationProblems CXX)
 
-add_executable(gtoc1
-  src/Astro_Functions.cpp
-  src/Lambert.cpp
-  src/mga_dsm.cpp
-  src/mga.cpp
-  src/misc4Tandem.cpp
-  src/Pl_Eph_An.cpp
-  src/PowSwingByInv.cpp
-  src/propagateKEP.cpp
-  src/time2distance.cpp
-  src/trajobjfuns.cpp
-  src/ZeroFinder.cpp
+find_path(MANTELLA_INCLUDE_DIR mantella0)
 
-  src/main.cpp
+add_executable(gtoc1
+  src/mantella_bindings/gtoc1.cpp
+  src/mantella_bindings/main.cpp
 )
 set_property(TARGET gtoc1 PROPERTY CXX_STANDARD 14)
 set_property(TARGET gtoc1 PROPERTY CXX_STANDARD_REQUIRED ON)
+target_include_directories(gtoc1 SYSTEM PUBLIC ${MANTELLA_INCLUDE_DIR})
