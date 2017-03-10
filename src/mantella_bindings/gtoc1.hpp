@@ -4,7 +4,7 @@
 
 #include <mantella0>
 
-namespace gtoc1 {
+namespace multiple_gravity_assist {
 struct celestial_body {
  public:
   static const celestial_body SUN;
@@ -38,8 +38,8 @@ struct asteroid {
 /**
  * Copied and adapted from `struct mgaproblem` in `src/mga.h`.
  */
-struct multiple_gravity_assist : mant::problem<double, 8> {
-  multiple_gravity_assist() noexcept;
+struct gtoc1 : mant::problem<double, 8> {
+  gtoc1() noexcept;
 
   /**
    * fly-by sequence of planets. This sequence is 1 element smaller than the

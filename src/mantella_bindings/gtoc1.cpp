@@ -7,7 +7,7 @@
 #include "../Pl_Eph_An.h"
 #include "../PowSwingByInv.h"
 
-using namespace gtoc1;
+using namespace multiple_gravity_assist;
 
 const celestial_body celestial_body::SUN(1.32712428e11, 0, 0, 0);
 const celestial_body celestial_body::MERCURY(22321, 0, 0, 1);
@@ -31,7 +31,7 @@ asteroid::asteroid(std::array<double, 6> keplerian, double epoch,
                    double mu) noexcept
     : keplerian(keplerian), epoch(epoch), mu(mu) {}
 
-multiple_gravity_assist::multiple_gravity_assist() noexcept
+gtoc1::gtoc1() noexcept
     : sequence({&celestial_body::EARTH, &celestial_body::VENUS,
                 &celestial_body::EARTH, &celestial_body::VENUS,
                 &celestial_body::EARTH, &celestial_body::JUPITER,

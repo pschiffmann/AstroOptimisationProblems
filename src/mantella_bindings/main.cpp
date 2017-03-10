@@ -3,7 +3,7 @@
 #include "gtoc1.hpp"
 
 int main() {
-  gtoc1::multiple_gravity_assist problem;
+  multiple_gravity_assist::gtoc1 problem;
 
   // Values taken from the _solutions_ section of this website:
   // http://www.esa.int/gsp/ACT/inf/projects/gtop/gtoc1.html
