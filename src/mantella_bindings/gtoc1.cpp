@@ -51,8 +51,8 @@ gtoc1::gtoc1() noexcept
    * Adapted version of function `MGA` from `src/mga.cpp`.
    */
   this->objective_function = [this](const array<double, 8> &parameter) {
-    std::array<double, 6> rp;
-    std::array<double, 8> DV;
+    std::array<double, 6> rp{};
+    std::array<double, 8> DV{};
     const int n = 8;
 
     double DVtot = 0;
@@ -66,51 +66,45 @@ gtoc1::gtoc1() noexcept
     double final_mass;                  // satelite final mass
     const double g = 9.80665 / 1000.0;  // Gravity
 
-    double *vec, *rec;
-    vector<double *> r;  // {0...n-1} position
-    vector<double *> v;  // {0...n-1} velocity
+    // position
+    std::array<std::array<double, 3>, 8> r;
+    // velocity
+    std::array<std::array<double, 3>, 8> v;
 
     int i_count, j_count, lw;
 
     int iter = 0;
 
     {
-      for (i_count = 0; i_count < n; i_count++) {
-        vec = new double[3];  // velocity and position are 3 D vector
-        rec = new double[3];
-        r.push_back(vec);
-        v.push_back(rec);
-
-        DV[i_count] = 0.0;
-      }
-
       {
         double totalTime = 0;
         for (i_count = 0; i_count < 7; i_count++) {
           totalTime += parameter[i_count];
           Planet_Ephemerides_Analytical(
-              totalTime, sequence.at(i_count)->distance_from_sun, r[i_count],
-              v[i_count]);  // r and  v in heliocentric coordinate system
+              totalTime, sequence.at(i_count)->distance_from_sun,
+              r[i_count].data(),
+              v[i_count].data());  // r and  v in heliocentric coordinate system
         }
         totalTime += parameter[7];
         Custom_Eph(totalTime + 2451544.5, asteroid.epoch,
-                   asteroid.keplerian.data(), r[7], v[7]);
+                   asteroid.keplerian.data(), r[7].data(), v[7].data());
       }
 
-      vett(r[0], r[1], Dum_Vec);
+      vett(r[0].data(), r[1].data(), Dum_Vec);
 
       if (Dum_Vec[2] > 0)
         lw = (rev_flag[0] == 0) ? 0 : 1;
       else
         lw = (rev_flag[0] == 0) ? 1 : 0;
 
-      LambertI(r[0], r[1], parameter[1] * 24 * 60 * 60, celestial_body::SUN.mu,
+      LambertI(r[0].data(), r[1].data(), parameter[1] * 24 * 60 * 60,
+               celestial_body::SUN.mu,
                lw,                                              // INPUT
                V_Lamb[0][0], V_Lamb[0][1], a, p, theta, iter);  // OUTPUT
-      DV[0] = norm(V_Lamb[0][0], v[0]);                         // Earth launch
+      DV[0] = norm(V_Lamb[0][0], v[0].data());                  // Earth launch
 
       for (i_count = 1; i_count <= n - 2; i_count++) {
-        vett(r[i_count], r[i_count + 1], Dum_Vec);
+        vett(r[i_count].data(), r[i_count + 1].data(), Dum_Vec);
 
         if (Dum_Vec[2] > 0)
           lw = (rev_flag[i_count] == 0) ? 0 : 1;
@@ -118,15 +112,15 @@ gtoc1::gtoc1() noexcept
           lw = (rev_flag[i_count] == 0) ? 1 : 0;
 
         /*if (i_count%2 != 0)	{*/
-        LambertI(r[i_count], r[i_count + 1],
+        LambertI(r[i_count].data(), r[i_count + 1].data(),
                  parameter[i_count + 1] * 24 * 60 * 60, celestial_body::SUN.mu,
                  lw,                                              // INPUT
                  V_Lamb[1][0], V_Lamb[1][1], a, p, theta, iter);  // OUTPUT
 
         // norm first perform the subtraction of vet1-vet2 and the evaluate
         // ||...||
-        Vin = norm(V_Lamb[0][1], v[i_count]);
-        Vout = norm(V_Lamb[1][0], v[i_count]);
+        Vin = norm(V_Lamb[0][1], v[i_count].data());
+        Vout = norm(V_Lamb[1][0], v[i_count].data());
 
         dot_prod = 0.0;
         for (int i = 0; i < 3; i++) {
@@ -181,13 +175,6 @@ gtoc1::gtoc1() noexcept
     for (i_count = 0; i_count < 3; i_count++)
       dot_prod += Dum_Vec[i_count] * v[n - 1][i_count];
 
-    // final clean
-    for (i_count = 0; i_count < n; i_count++) {
-      delete[] r[i_count];
-      delete[] v[i_count];
-    }
-    r.clear();
-    v.clear();
     return -final_mass * fabs(dot_prod);
   };
 }
