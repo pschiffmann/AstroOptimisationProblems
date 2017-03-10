@@ -6,6 +6,7 @@
 #include "../Lambert.h"
 #include "../Pl_Eph_An.h"
 #include "../PowSwingByInv.h"
+#include "helpers.hpp"
 
 using namespace multiple_gravity_assist;
 
@@ -56,8 +57,9 @@ gtoc1::gtoc1() noexcept
     const int n = 8;
 
     double DVtot = 0;
-    double Dum_Vec[3], Vin, Vout;
-    double V_Lamb[2][2][3], dot_prod;
+    std::array<double, 3> Dum_Vec{};
+    double Vin, Vout;
+    double V_Lamb[2][2][3];
     double a, p, theta, alfa;
     double DVrel, DVarr = 0;
 
@@ -90,7 +92,7 @@ gtoc1::gtoc1() noexcept
                    asteroid.keplerian.data(), r[7].data(), v[7].data());
       }
 
-      vett(r[0].data(), r[1].data(), Dum_Vec);
+      Dum_Vec = cross_product(r[0], r[1]);
 
       if (Dum_Vec[2] > 0)
         lw = (rev_flag[0] == 0) ? 0 : 1;
@@ -104,7 +106,7 @@ gtoc1::gtoc1() noexcept
       DV[0] = norm(V_Lamb[0][0], v[0].data());                  // Earth launch
 
       for (i_count = 1; i_count <= n - 2; i_count++) {
-        vett(r[i_count].data(), r[i_count + 1].data(), Dum_Vec);
+        Dum_Vec = cross_product(r[i_count], r[i_count + 1]);
 
         if (Dum_Vec[2] > 0)
           lw = (rev_flag[i_count] == 0) ? 0 : 1;
@@ -122,15 +124,17 @@ gtoc1::gtoc1() noexcept
         Vin = norm(V_Lamb[0][1], v[i_count].data());
         Vout = norm(V_Lamb[1][0], v[i_count].data());
 
-        dot_prod = 0.0;
-        for (int i = 0; i < 3; i++) {
-          dot_prod += (V_Lamb[0][1][i] - v[i_count][i]) *
-                      (V_Lamb[1][0][i] - v[i_count][i]);
-        }
-        alfa = acos(dot_prod / (Vin * Vout));
+        {
+          double dot_prod = 0.0;
+          for (size_t i = 0; i < 3; i++) {
+            dot_prod += (V_Lamb[0][1][i] - v[i_count][i]) *
+                        (V_Lamb[1][0][i] - v[i_count][i]);
+          }
+          alfa = acos(dot_prod / (Vin * Vout));
 
-        // calculation of delta V at pericenter
-        PowSwingByInv(Vin, Vout, alfa, DV[i_count], rp[i_count - 1]);
+          // calculation of delta V at pericenter
+          PowSwingByInv(Vin, Vout, alfa, DV[i_count], rp[i_count - 1]);
+        }
 
         rp[i_count - 1] *= sequence[i_count]->mu;
 
@@ -145,7 +149,7 @@ gtoc1::gtoc1() noexcept
     for (i_count = 0; i_count < 3; i_count++)
       Dum_Vec[i_count] = v[n - 1][i_count] - V_Lamb[1][1][i_count];
 
-    DVrel = norm2(Dum_Vec);
+    DVrel = norm2(Dum_Vec.data());
 
     DVarr = DVrel;
 
@@ -171,10 +175,6 @@ gtoc1::gtoc1() noexcept
           v[n - 1][i_count] -
           V_Lamb[1][1][i_count];  // arrival relative velocity at the asteroid;
 
-    dot_prod = 0;
-    for (i_count = 0; i_count < 3; i_count++)
-      dot_prod += Dum_Vec[i_count] * v[n - 1][i_count];
-
-    return -final_mass * fabs(dot_prod);
+    return -final_mass * fabs(dot_product(Dum_Vec, v[n - 1]));
   };
 }

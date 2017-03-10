@@ -17,6 +17,7 @@ add_executable(gtoc1
   src/ZeroFinder.cpp
 
   src/mantella_bindings/gtoc1.cpp
+  src/mantella_bindings/helpers.cpp
   src/mantella_bindings/main.cpp
 )
 set_property(TARGET gtoc1 PROPERTY CXX_STANDARD 14)
