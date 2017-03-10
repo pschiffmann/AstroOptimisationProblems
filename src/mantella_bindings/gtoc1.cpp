@@ -53,7 +53,6 @@ gtoc1::gtoc1() noexcept
   this->objective_function = [this](const array<double, 8> &parameter) {
     std::array<double, 6> rp;
     std::array<double, 8> DV;
-    double obj_funct;
     const int n = 8;
 
     double DVtot = 0;
@@ -170,7 +169,7 @@ gtoc1::gtoc1() noexcept
     if (DV[0] > DVlaunch) DVtot += (DV[0] - DVlaunch);
 
     // Evaluation of satellite final mass
-    obj_funct = final_mass = initial_mass * exp(-DVtot / (Isp * g));
+    final_mass = initial_mass * exp(-DVtot / (Isp * g));
 
     // V asteroid - V satellite
     for (i_count = 0; i_count < 3; i_count++)
@@ -182,8 +181,6 @@ gtoc1::gtoc1() noexcept
     for (i_count = 0; i_count < 3; i_count++)
       dot_prod += Dum_Vec[i_count] * v[n - 1][i_count];
 
-    obj_funct = -(final_mass)*fabs(dot_prod);
-
     // final clean
     for (i_count = 0; i_count < n; i_count++) {
       delete[] r[i_count];
@@ -191,6 +188,6 @@ gtoc1::gtoc1() noexcept
     }
     r.clear();
     v.clear();
-    return obj_funct;
+    return -final_mass * fabs(dot_prod);
   };
 }
