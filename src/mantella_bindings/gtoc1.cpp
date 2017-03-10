@@ -71,8 +71,6 @@ gtoc1::gtoc1() noexcept
     vector<double *> r;  // {0...n-1} position
     vector<double *> v;  // {0...n-1} velocity
 
-    double T = 0.0;  // total time
-
     int i_count, j_count, lw;
 
     int iter = 0;
@@ -87,16 +85,18 @@ gtoc1::gtoc1() noexcept
         DV[i_count] = 0.0;
       }
 
-      T = 0;
-      for (i_count = 0; i_count < 7; i_count++) {
-        T += parameter[i_count];
-        Planet_Ephemerides_Analytical(
-            T, sequence.at(i_count)->distance_from_sun, r[i_count],
-            v[i_count]);  // r and  v in heliocentric coordinate system
+      {
+        double totalTime = 0;
+        for (i_count = 0; i_count < 7; i_count++) {
+          totalTime += parameter[i_count];
+          Planet_Ephemerides_Analytical(
+              totalTime, sequence.at(i_count)->distance_from_sun, r[i_count],
+              v[i_count]);  // r and  v in heliocentric coordinate system
+        }
+        totalTime += parameter[7];
+        Custom_Eph(totalTime + 2451544.5, asteroid.epoch,
+                   asteroid.keplerian.data(), r[7], v[7]);
       }
-      T += parameter[7];
-      Custom_Eph(T + 2451544.5, asteroid.epoch, asteroid.keplerian.data(), r[7],
-                 v[7]);
 
       vett(r[0], r[1], Dum_Vec);
 
