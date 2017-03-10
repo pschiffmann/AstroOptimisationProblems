@@ -56,12 +56,8 @@ gtoc1::gtoc1() noexcept
     std::array<double, 8> DV{};
     const int n = 8;
 
-    double DVtot = 0;
     std::array<double, 3> Dum_Vec{};
-    double Vin, Vout;
     double V_Lamb[2][2][3];
-    double a, p, theta, alfa;
-    double DVrel, DVarr = 0;
 
     // only used for asteroid impact (ex: gtoc1)
     const double initial_mass = mass;   // Satellite initial mass [Kg]
@@ -74,8 +70,6 @@ gtoc1::gtoc1() noexcept
     std::array<std::array<double, 3>, 8> v;
 
     int i_count, j_count, lw;
-
-    int iter = 0;
 
     {
       {
@@ -99,6 +93,12 @@ gtoc1::gtoc1() noexcept
       else
         lw = (rev_flag[0] == 0) ? 1 : 0;
 
+
+      // `a`, `p`, `theta` and `iter` are out-parameters of `LambertI`. They are
+      // never read, but required. :(
+      double a, p, theta;
+      int iter;
+
       LambertI(r[0].data(), r[1].data(), parameter[1] * 24 * 60 * 60,
                celestial_body::SUN.mu,
                lw,                                              // INPUT
@@ -119,21 +119,21 @@ gtoc1::gtoc1() noexcept
                  lw,                                              // INPUT
                  V_Lamb[1][0], V_Lamb[1][1], a, p, theta, iter);  // OUTPUT
 
-        // norm first perform the subtraction of vet1-vet2 and the evaluate
-        // ||...||
-        Vin = norm(V_Lamb[0][1], v[i_count].data());
-        Vout = norm(V_Lamb[1][0], v[i_count].data());
-
         {
+          // norm first perform the subtraction of vet1-vet2 and the evaluate
+          // ||...||
+          double Vin = norm(V_Lamb[0][1], v[i_count].data());
+          double Vout = norm(V_Lamb[1][0], v[i_count].data());
+
           double dot_prod = 0.0;
           for (size_t i = 0; i < 3; i++) {
             dot_prod += (V_Lamb[0][1][i] - v[i_count][i]) *
                         (V_Lamb[1][0][i] - v[i_count][i]);
           }
-          alfa = acos(dot_prod / (Vin * Vout));
 
           // calculation of delta V at pericenter
-          PowSwingByInv(Vin, Vout, alfa, DV[i_count], rp[i_count - 1]);
+          PowSwingByInv(Vin, Vout, acos(dot_prod / (Vin * Vout)), DV[i_count],
+                        rp[i_count - 1]);
         }
 
         rp[i_count - 1] *= sequence[i_count]->mu;
@@ -149,11 +149,7 @@ gtoc1::gtoc1() noexcept
     for (i_count = 0; i_count < 3; i_count++)
       Dum_Vec[i_count] = v[n - 1][i_count] - V_Lamb[1][1][i_count];
 
-    DVrel = norm2(Dum_Vec.data());
-
-    DVarr = DVrel;
-
-    DVtot = 0;
+    double DVtot = 0;
 
     for (i_count = 1; i_count < n - 1; i_count++) DVtot += DV[i_count];
 
