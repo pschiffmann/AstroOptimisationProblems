@@ -17,12 +17,14 @@ struct celestial_body {
   static const celestial_body URANUS;
   static const celestial_body NEPTUNE;
 
- private:
-  celestial_body(double mu, double penalty,
-                 double penalty_coefficient) noexcept;
   double mu;
   double penalty;
   double penalty_coefficient;
+  unsigned char distance_from_sun;
+
+ private:
+  celestial_body(double mu, double penalty, double penalty_coefficient,
+                 unsigned char distance_from_sun) noexcept;
 };
 
 struct asteroid {
@@ -39,7 +41,11 @@ struct asteroid {
 struct multiple_gravity_assist : mant::problem<double, 8> {
   multiple_gravity_assist() noexcept;
 
-  std::array<const celestial_body*, 8> sequence;  // fly-by sequence
+  /**
+   * fly-by sequence of planets. This sequence is 1 element smaller than the
+   * problem dimension because the last section always targets the `asteroid`.
+   */
+  std::array<const celestial_body*, 7> sequence;
   std::array<int, 8> rev_flag;  // vector of flags for clockwise legs
   asteroid asteroid;
   double Isp;
