@@ -57,7 +57,10 @@ gtoc1::gtoc1() noexcept
     const int n = 8;
 
     std::array<double, 3> Dum_Vec{};
-    double V_Lamb[2][2][3];
+    std::array<double, 3> last_section_departure_velocity;
+    std::array<double, 3> last_section_arrival_velocity;
+    std::array<double, 3> current_section_departure_velocity;
+    std::array<double, 3> current_section_arrival_velocity;
 
     // only used for asteroid impact (ex: gtoc1)
     const double initial_mass = mass;   // Satellite initial mass [Kg]
@@ -93,17 +96,18 @@ gtoc1::gtoc1() noexcept
       else
         lw = (rev_flag[0] == 0) ? 1 : 0;
 
-
       // `a`, `p`, `theta` and `iter` are out-parameters of `LambertI`. They are
       // never read, but required. :(
       double a, p, theta;
       int iter;
 
       LambertI(r[0].data(), r[1].data(), parameter[1] * 24 * 60 * 60,
-               celestial_body::SUN.mu,
-               lw,                                              // INPUT
-               V_Lamb[0][0], V_Lamb[0][1], a, p, theta, iter);  // OUTPUT
-      DV[0] = norm(V_Lamb[0][0], v[0].data());                  // Earth launch
+               celestial_body::SUN.mu, lw,
+               // OUTPUT
+               last_section_departure_velocity.data(),
+               last_section_arrival_velocity.data(), a, p, theta, iter);
+      // Earth launch
+      DV[0] = norm(last_section_departure_velocity.data(), v[0].data());
 
       for (i_count = 1; i_count <= n - 2; i_count++) {
         Dum_Vec = cross_product(r[i_count], r[i_count + 1]);
@@ -116,19 +120,23 @@ gtoc1::gtoc1() noexcept
         /*if (i_count%2 != 0)	{*/
         LambertI(r[i_count].data(), r[i_count + 1].data(),
                  parameter[i_count + 1] * 24 * 60 * 60, celestial_body::SUN.mu,
-                 lw,                                              // INPUT
-                 V_Lamb[1][0], V_Lamb[1][1], a, p, theta, iter);  // OUTPUT
+                 lw,
+                 // OUTPUT
+                 current_section_departure_velocity.data(),
+                 current_section_arrival_velocity.data(), a, p, theta, iter);
 
         {
           // norm first perform the subtraction of vet1-vet2 and the evaluate
           // ||...||
-          double Vin = norm(V_Lamb[0][1], v[i_count].data());
-          double Vout = norm(V_Lamb[1][0], v[i_count].data());
+          double Vin =
+              norm(last_section_arrival_velocity.data(), v[i_count].data());
+          double Vout = norm(current_section_departure_velocity.data(),
+                             v[i_count].data());
 
           double dot_prod = 0.0;
           for (size_t i = 0; i < 3; i++) {
-            dot_prod += (V_Lamb[0][1][i] - v[i_count][i]) *
-                        (V_Lamb[1][0][i] - v[i_count][i]);
+            dot_prod += (last_section_arrival_velocity[i] - v[i_count][i]) *
+                        (current_section_departure_velocity[i] - v[i_count][i]);
           }
 
           // calculation of delta V at pericenter
@@ -138,16 +146,17 @@ gtoc1::gtoc1() noexcept
 
         rp[i_count - 1] *= sequence[i_count]->mu;
 
-        if (i_count != n - 2)  // swap
-          for (j_count = 0; j_count < 3; j_count++) {
-            V_Lamb[0][0][j_count] = V_Lamb[1][0][j_count];  // [j_count];
-            V_Lamb[0][1][j_count] = V_Lamb[1][1][j_count];  // [j_count];
-          }
+        // swap
+        if (i_count != n - 2) {
+          last_section_departure_velocity = current_section_departure_velocity;
+          last_section_arrival_velocity = current_section_arrival_velocity;
+        }
       }
     }
 
     for (i_count = 0; i_count < 3; i_count++)
-      Dum_Vec[i_count] = v[n - 1][i_count] - V_Lamb[1][1][i_count];
+      Dum_Vec[i_count] =
+          v[n - 1][i_count] - current_section_arrival_velocity[i_count];
 
     double DVtot = 0;
 
@@ -165,11 +174,10 @@ gtoc1::gtoc1() noexcept
     // Evaluation of satellite final mass
     final_mass = initial_mass * exp(-DVtot / (Isp * g));
 
-    // V asteroid - V satellite
+    // arrival relative velocity at the asteroid;
     for (i_count = 0; i_count < 3; i_count++)
       Dum_Vec[i_count] =
-          v[n - 1][i_count] -
-          V_Lamb[1][1][i_count];  // arrival relative velocity at the asteroid;
+          v[n - 1][i_count] - current_section_arrival_velocity[i_count];
 
     return -final_mass * fabs(dot_product(Dum_Vec, v[n - 1]));
   };
