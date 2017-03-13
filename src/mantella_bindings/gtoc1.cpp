@@ -56,79 +56,63 @@ gtoc1::gtoc1() noexcept
     std::array<double, 8> DV{};
     const int n = 8;
 
-    std::array<double, 3> last_section_departure_velocity;
-    std::array<double, 3> last_section_arrival_velocity;
-    std::array<double, 3> current_section_departure_velocity;
-    std::array<double, 3> current_section_arrival_velocity;
-
     const double g = 9.80665 / 1000.0;  // Gravity
 
+    // r and  v in heliocentric coordinate system
     // position
     std::array<std::array<double, 3>, 8> r;
     // velocity
     std::array<std::array<double, 3>, 8> v;
 
     {
-      {
-        double totalTime = 0;
-        for (size_t i = 0; i < 7; i++) {
-          totalTime += parameter[i];
-          Planet_Ephemerides_Analytical(
-              totalTime, sequence.at(i)->distance_from_sun, r[i].data(),
-              v[i].data());  // r and  v in heliocentric coordinate system
-        }
-        totalTime += parameter[7];
-        Custom_Eph(totalTime + 2451544.5, asteroid.epoch,
-                   asteroid.keplerian.data(), r[7].data(), v[7].data());
+      double totalTime = 0;
+      for (size_t i = 0; i < 7; i++) {
+        totalTime += parameter[i];
+        Planet_Ephemerides_Analytical(totalTime,
+                                      sequence.at(i)->distance_from_sun,
+                                      r[i].data(), v[i].data());
       }
+      totalTime += parameter[7];
+      Custom_Eph(totalTime + 2451544.5, asteroid.epoch,
+                 asteroid.keplerian.data(), r[7].data(), v[7].data());
+    }
 
-      // `a`, `p`, `theta` and `iter` are out-parameters of `LambertI`. They are
-      // never read, but required. :(
-      double a, p, theta;
-      int iter;
+    std::array<double, 3> current_section_departure_velocity;
+    std::array<double, 3> current_section_arrival_velocity;
+    for (size_t i = 0; i <= n - 2; i++) {
+      std::array<double, 3> last_section_departure_velocity =
+          current_section_departure_velocity;
+      std::array<double, 3> last_section_arrival_velocity =
+          current_section_arrival_velocity;
 
       bool longWay =
-          cross_product(r[0], r[1])[2] > 0 ? rev_flag[0] : !rev_flag[0];
-      LambertI(r[0].data(), r[1].data(), parameter[1] * 24 * 60 * 60,
+          cross_product(r[i], r[i + 1])[2] > 0 ? rev_flag[i] : !rev_flag[i];
+
+      // `a`, `p`, `theta` and `iter` are out-parameters of `LambertI`.
+      // They are never read, but required. :(
+      double a, p, theta;
+      int iter;
+      LambertI(r[i].data(), r[i + 1].data(), parameter[i + 1] * 24 * 60 * 60,
                celestial_body::SUN.mu, longWay,
                // OUTPUT
-               last_section_departure_velocity.data(),
-               last_section_arrival_velocity.data(), a, p, theta, iter);
-      // Earth launch
-      DV[0] = norm(sub(last_section_departure_velocity, v[0]));
+               current_section_departure_velocity.data(),
+               current_section_arrival_velocity.data(), a, p, theta, iter);
 
-      for (size_t i = 1; i <= n - 2; i++) {
-        bool longWay =
-            cross_product(r[i], r[i + 1])[2] > 0 ? rev_flag[i] : !rev_flag[i];
+      if (i == 0) {
+        // Earth launch
+        DV[0] = norm(sub(current_section_departure_velocity, v[0]));
+      } else {
+        double Vin = norm(sub(last_section_arrival_velocity, v[i]));
+        double Vout = norm(sub(current_section_departure_velocity, v[i]));
 
-        LambertI(r[i].data(), r[i + 1].data(), parameter[i + 1] * 24 * 60 * 60,
-                 celestial_body::SUN.mu, longWay,
-                 // OUTPUT
-                 current_section_departure_velocity.data(),
-                 current_section_arrival_velocity.data(), a, p, theta, iter);
-
-        {
-          // norm first perform the subtraction of vet1-vet2 and the evaluate
-          // ||...||
-          double Vin = norm(sub(last_section_arrival_velocity, v[i]));
-          double Vout = norm(sub(current_section_departure_velocity, v[i]));
-
-          // calculation of delta V at pericenter
-          PowSwingByInv(
-              Vin, Vout,
-              acos(dot_product(sub(last_section_arrival_velocity, v[i]),
-                               sub(current_section_departure_velocity, v[i])) /
-                   (Vin * Vout)),
-              DV[i], rp[i - 1]);
-        }
-
+        // calculation of delta V at pericenter
+        PowSwingByInv(
+            Vin, Vout,
+            acos(dot_product(sub(last_section_arrival_velocity, v[i]),
+                             sub(current_section_departure_velocity, v[i])) /
+                 (Vin * Vout)),
+            DV[i], rp[i - 1]);
         rp[i - 1] *= sequence[i]->mu;
-
-        // swap
-        if (i != n - 2) {
-          last_section_departure_velocity = current_section_departure_velocity;
-          last_section_arrival_velocity = current_section_arrival_velocity;
-        }
       }
     }
 
