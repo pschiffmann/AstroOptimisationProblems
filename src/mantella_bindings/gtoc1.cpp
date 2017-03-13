@@ -1,6 +1,6 @@
 #include "gtoc1.hpp"
 
-#include <math.h>
+#include <iterator>
 #include <numeric>
 
 #include "../Lambert.h"
@@ -62,9 +62,6 @@ gtoc1::gtoc1() noexcept
     std::array<double, 3> current_section_departure_velocity;
     std::array<double, 3> current_section_arrival_velocity;
 
-    // only used for asteroid impact (ex: gtoc1)
-    const double initial_mass = mass;   // Satellite initial mass [Kg]
-    double final_mass;                  // satelite final mass
     const double g = 9.80665 / 1000.0;  // Gravity
 
     // position
@@ -72,17 +69,14 @@ gtoc1::gtoc1() noexcept
     // velocity
     std::array<std::array<double, 3>, 8> v;
 
-    int i_count, j_count, lw;
-
     {
       {
         double totalTime = 0;
-        for (i_count = 0; i_count < 7; i_count++) {
-          totalTime += parameter[i_count];
+        for (size_t i = 0; i < 7; i++) {
+          totalTime += parameter[i];
           Planet_Ephemerides_Analytical(
-              totalTime, sequence.at(i_count)->distance_from_sun,
-              r[i_count].data(),
-              v[i_count].data());  // r and  v in heliocentric coordinate system
+              totalTime, sequence.at(i)->distance_from_sun, r[i].data(),
+              v[i].data());  // r and  v in heliocentric coordinate system
         }
         totalTime += parameter[7];
         Custom_Eph(totalTime + 2451544.5, asteroid.epoch,
@@ -91,6 +85,7 @@ gtoc1::gtoc1() noexcept
 
       Dum_Vec = cross_product(r[0], r[1]);
 
+      int lw;
       if (Dum_Vec[2] > 0)
         lw = (rev_flag[0] == 0) ? 0 : 1;
       else
@@ -109,17 +104,16 @@ gtoc1::gtoc1() noexcept
       // Earth launch
       DV[0] = norm(sub(last_section_departure_velocity, v[0]));
 
-      for (i_count = 1; i_count <= n - 2; i_count++) {
-        Dum_Vec = cross_product(r[i_count], r[i_count + 1]);
+      for (size_t i = 1; i <= n - 2; i++) {
+        Dum_Vec = cross_product(r[i], r[i + 1]);
 
         if (Dum_Vec[2] > 0)
-          lw = (rev_flag[i_count] == 0) ? 0 : 1;
+          lw = (rev_flag[i] == 0) ? 0 : 1;
         else
-          lw = (rev_flag[i_count] == 0) ? 1 : 0;
+          lw = (rev_flag[i] == 0) ? 1 : 0;
 
-        LambertI(r[i_count].data(), r[i_count + 1].data(),
-                 parameter[i_count + 1] * 24 * 60 * 60, celestial_body::SUN.mu,
-                 lw,
+        LambertI(r[i].data(), r[i + 1].data(), parameter[i + 1] * 24 * 60 * 60,
+                 celestial_body::SUN.mu, lw,
                  // OUTPUT
                  current_section_departure_velocity.data(),
                  current_section_arrival_velocity.data(), a, p, theta, iter);
@@ -127,24 +121,22 @@ gtoc1::gtoc1() noexcept
         {
           // norm first perform the subtraction of vet1-vet2 and the evaluate
           // ||...||
-          double Vin = norm(sub(last_section_arrival_velocity, v[i_count]));
-          double Vout =
-              norm(sub(current_section_departure_velocity, v[i_count]));
+          double Vin = norm(sub(last_section_arrival_velocity, v[i]));
+          double Vout = norm(sub(current_section_departure_velocity, v[i]));
 
           // calculation of delta V at pericenter
           PowSwingByInv(
               Vin, Vout,
-              acos(dot_product(
-                       sub(last_section_arrival_velocity, v[i_count]),
-                       sub(current_section_departure_velocity, v[i_count])) /
+              acos(dot_product(sub(last_section_arrival_velocity, v[i]),
+                               sub(current_section_departure_velocity, v[i])) /
                    (Vin * Vout)),
-              DV[i_count], rp[i_count - 1]);
+              DV[i], rp[i - 1]);
         }
 
-        rp[i_count - 1] *= sequence[i_count]->mu;
+        rp[i - 1] *= sequence[i]->mu;
 
         // swap
-        if (i_count != n - 2) {
+        if (i != n - 2) {
           last_section_departure_velocity = current_section_departure_velocity;
           last_section_arrival_velocity = current_section_arrival_velocity;
         }
@@ -153,21 +145,21 @@ gtoc1::gtoc1() noexcept
 
     Dum_Vec = sub(v[n - 1], current_section_arrival_velocity);
 
-    double DVtot = 0;
-
-    for (i_count = 1; i_count < n - 1; i_count++) DVtot += DV[i_count];
+    double DVtot = std::accumulate<double *, double>(std::next(DV.begin()),
+                                                     std::prev(DV.end()), 0);
 
     // Build Penalty
-    for (i_count = 0; i_count < n - 2; i_count++)
-      if (rp[i_count] < sequence[i_count + 1]->penalty)
-        DVtot += sequence[i_count + 1]->penalty_coefficient *
-                 fabs(rp[i_count] - sequence[i_count + 1]->penalty);
+    for (size_t i = 0; i < n - 2; i++) {
+      if (rp[i] < sequence[i + 1]->penalty)
+        DVtot += sequence[i + 1]->penalty_coefficient *
+                 fabs(rp[i] - sequence[i + 1]->penalty);
+    }
 
     // Launcher Constraint
     if (DV[0] > DVlaunch) DVtot += (DV[0] - DVlaunch);
 
     // Evaluation of satellite final mass
-    final_mass = initial_mass * exp(-DVtot / (Isp * g));
+    double final_mass = mass * exp(-DVtot / (Isp * g));
 
     // arrival relative velocity at the asteroid;
     Dum_Vec = sub(v[n - 1], current_section_arrival_velocity);
