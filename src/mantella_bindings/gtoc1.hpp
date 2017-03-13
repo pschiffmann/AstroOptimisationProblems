@@ -46,7 +46,7 @@ struct gtoc1 : mant::problem<double, 8> {
    * problem dimension because the last section always targets the `asteroid`.
    */
   std::array<const celestial_body*, 7> sequence;
-  std::array<int, 8> rev_flag;  // vector of flags for clockwise legs
+  std::array<bool, 8> rev_flag;  // vector of flags for clockwise legs
   asteroid asteroid;
   double Isp;
   double mass;

@@ -56,7 +56,6 @@ gtoc1::gtoc1() noexcept
     std::array<double, 8> DV{};
     const int n = 8;
 
-    std::array<double, 3> Dum_Vec{};
     std::array<double, 3> last_section_departure_velocity;
     std::array<double, 3> last_section_arrival_velocity;
     std::array<double, 3> current_section_departure_velocity;
@@ -83,21 +82,15 @@ gtoc1::gtoc1() noexcept
                    asteroid.keplerian.data(), r[7].data(), v[7].data());
       }
 
-      Dum_Vec = cross_product(r[0], r[1]);
-
-      int lw;
-      if (Dum_Vec[2] > 0)
-        lw = (rev_flag[0] == 0) ? 0 : 1;
-      else
-        lw = (rev_flag[0] == 0) ? 1 : 0;
-
       // `a`, `p`, `theta` and `iter` are out-parameters of `LambertI`. They are
       // never read, but required. :(
       double a, p, theta;
       int iter;
 
+      bool longWay =
+          cross_product(r[0], r[1])[2] > 0 ? rev_flag[0] : !rev_flag[0];
       LambertI(r[0].data(), r[1].data(), parameter[1] * 24 * 60 * 60,
-               celestial_body::SUN.mu, lw,
+               celestial_body::SUN.mu, longWay,
                // OUTPUT
                last_section_departure_velocity.data(),
                last_section_arrival_velocity.data(), a, p, theta, iter);
@@ -105,15 +98,11 @@ gtoc1::gtoc1() noexcept
       DV[0] = norm(sub(last_section_departure_velocity, v[0]));
 
       for (size_t i = 1; i <= n - 2; i++) {
-        Dum_Vec = cross_product(r[i], r[i + 1]);
-
-        if (Dum_Vec[2] > 0)
-          lw = (rev_flag[i] == 0) ? 0 : 1;
-        else
-          lw = (rev_flag[i] == 0) ? 1 : 0;
+        bool longWay =
+            cross_product(r[i], r[i + 1])[2] > 0 ? rev_flag[i] : !rev_flag[i];
 
         LambertI(r[i].data(), r[i + 1].data(), parameter[i + 1] * 24 * 60 * 60,
-                 celestial_body::SUN.mu, lw,
+                 celestial_body::SUN.mu, longWay,
                  // OUTPUT
                  current_section_departure_velocity.data(),
                  current_section_arrival_velocity.data(), a, p, theta, iter);
@@ -143,8 +132,6 @@ gtoc1::gtoc1() noexcept
       }
     }
 
-    Dum_Vec = sub(v[n - 1], current_section_arrival_velocity);
-
     double DVtot = std::accumulate<double *, double>(std::next(DV.begin()),
                                                      std::prev(DV.end()), 0);
 
@@ -162,8 +149,8 @@ gtoc1::gtoc1() noexcept
     double final_mass = mass * exp(-DVtot / (Isp * g));
 
     // arrival relative velocity at the asteroid;
-    Dum_Vec = sub(v[n - 1], current_section_arrival_velocity);
+    auto arrival_velocity = sub(v[n - 1], current_section_arrival_velocity);
 
-    return -final_mass * fabs(dot_product(Dum_Vec, v[n - 1]));
+    return -final_mass * fabs(dot_product(arrival_velocity, v[n - 1]));
   };
 }
