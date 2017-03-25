@@ -2,12 +2,13 @@
 
 #include <stdexcept>
 #include "../Astro_Functions.h"
+#include "vector3d_helpers.hpp"
 
-void multiple_gravity_assist::lambert(const double *r1_in, const double *r2_in,
-                                      double t,
+void multiple_gravity_assist::lambert(std::array<double, 3> r1,
+                                      std::array<double, 3> r2, double t,
                                       const double mu,         // INPUT
                                       const int lw,            // INPUT
-                                      double *v1, double *v2)  // OUTPUT
+                                      double* v1, double* v2)  // OUTPUT
 {
   double a, p, theta;
   int iter;
@@ -23,7 +24,7 @@ void multiple_gravity_assist::lambert(const double *r1_in, const double *r2_in,
       sigma1, vr1, vt1, vt2, vr2, R = 0.0;
   int i_count, i;
   const double tolerance = 1e-11;
-  double r1[3], r2[3], r2_vers[3];
+  double r2_vers[3];
   double ih_dum[3], ih[3], dum[3];
 
   // Increasing the tolerance does not bring any advantage as the
@@ -32,14 +33,11 @@ void multiple_gravity_assist::lambert(const double *r1_in, const double *r2_in,
   // lower precision allow for usual convergence.
 
   if (t <= 0) {
-    throw std::invalid_argument("ERROR in Lambert Solver: Negative Time in input.");
+    throw std::invalid_argument(
+        "ERROR in Lambert Solver: Negative Time in input.");
   }
 
-  for (i = 0; i < 3; i++) {
-    r1[i] = r1_in[i];
-    r2[i] = r2_in[i];
-    R += r1[i] * r1[i];
-  }
+  R = dot_product(r1, r1);
 
   R = sqrt(R);
   V = sqrt(mu / R);
@@ -125,7 +123,7 @@ void multiple_gravity_assist::lambert(const double *r1_in, const double *r2_in,
   // parameter of the solution
   p = (r2_mod / (am * eta2)) * pow(sin(theta / 2), 2);
   sigma1 = (1 / (eta * sqrt(am))) * (2 * lambda * am - (lambda + x * eta));
-  vett(r1, r2, ih_dum);
+  vett(r1.data(), r2.data(), ih_dum);
   vers(ih_dum, ih);
 
   if (lw) {
@@ -134,13 +132,13 @@ void multiple_gravity_assist::lambert(const double *r1_in, const double *r2_in,
 
   vr1 = sigma1;
   vt1 = sqrt(p);
-  vett(ih, r1, dum);
+  vett(ih, r1.data(), dum);
 
   for (i = 0; i < 3; i++) v1[i] = vr1 * r1[i] + vt1 * dum[i];
 
   vt2 = vt1 / r2_mod;
   vr2 = -vr1 + (vt1 - vt2) / tan(theta / 2);
-  vers(r2, r2_vers);
+  vers(r2.data(), r2_vers);
   vett(ih, r2_vers, dum);
   for (i = 0; i < 3; i++) v2[i] = vr2 * r2[i] / r2_mod + vt2 * dum[i];
 

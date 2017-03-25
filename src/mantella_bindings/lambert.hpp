@@ -11,8 +11,8 @@ namespace multiple_gravity_assist {
  *
  * Throws `std::invalid_argument` if `t` is negative or zero.
  */
-void lambert(const double *r1_in, const double *r2_in, double t,
-             const double mu,          // INPUT
-             const int lw,             // INPUT
-             double *v1, double *v2);  // OUTPUT
+void lambert(std::array<double, 3> r1_in, std::array<double, 3> r2_in, double t,
+             const double mu, const int lw,
+             // OUTPUT
+             double* v1, double* v2);
 }
