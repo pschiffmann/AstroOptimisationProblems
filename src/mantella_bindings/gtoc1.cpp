@@ -88,11 +88,11 @@ gtoc1::gtoc1() noexcept
       bool longWay =
           cross_product(r[i], r[i + 1])[2] > 0 ? rev_flag[i] : !rev_flag[i];
 
-      lambert(r[i], r[i + 1], parameter[i + 1] * 24 * 60 * 60,
-              celestial_body::SUN.mu, longWay,
-              // OUTPUT
-              current_section_departure_velocity,
-              current_section_arrival_velocity);
+      const auto solution =
+          lambert(r[i], r[i + 1], parameter[i + 1] * 24 * 60 * 60,
+                  celestial_body::SUN.mu, longWay);
+      current_section_departure_velocity = solution.departure_velocity;
+      current_section_arrival_velocity = solution.arrival_velocity;
 
       if (i == 0) {
         // Earth launch

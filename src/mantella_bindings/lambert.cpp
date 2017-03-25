@@ -4,12 +4,9 @@
 #include "../Astro_Functions.h"
 #include "vector3d_helpers.hpp"
 
-void multiple_gravity_assist::lambert(std::array<double, 3> r1,
-                                      std::array<double, 3> r2, double t,
-                                      const double mu, const int lw,
-                                      // OUTPUT
-                                      std::array<double, 3>& v1,
-                                      std::array<double, 3>& v2) {
+multiple_gravity_assist::lambert_solution multiple_gravity_assist::lambert(
+    std::array<double, 3> r1, std::array<double, 3> r2, double t,
+    const double mu, const int lw) {
   if (t <= 0) {
     throw std::invalid_argument(
         "ERROR in Lambert Solver: Negative Time in input.");
@@ -111,15 +108,19 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
   std::array<double, 3> ih = unit_vector(cross_product(r1, r2));
   if (lw) ih = mul(ih, -1);
 
+  multiple_gravity_assist::lambert_solution solution;
+
   double vr1 = (1 / (eta * sqrt(am))) * (2 * lambda * am - (lambda + x * eta));
   double vt1 = sqrt(p);
-  v1 = add(mul(r1, vr1), mul(cross_product(ih, r1), vt1));
+  solution.departure_velocity =
+      mul(add(mul(r1, vr1), mul(cross_product(ih, r1), vt1)), V);
 
   double vt2 = vt1 / r2_mod;
   double vr2 = -vr1 + (vt1 - vt2) / tan(theta / 2);
-  v2 = add(div(mul(r2, vr2), r2_mod),
-           mul(cross_product(ih, unit_vector(r2)), vt2));
+  solution.arrival_velocity =
+      mul(add(div(mul(r2, vr2), r2_mod),
+              mul(cross_product(ih, unit_vector(r2)), vt2)),
+          V);
 
-  v1 = mul(v1, V);
-  v2 = mul(v2, V);
+  return solution;
 }
