@@ -3,9 +3,9 @@
 #include <iterator>
 #include <numeric>
 
-#include "../Lambert.h"
 #include "../Pl_Eph_An.h"
 #include "../PowSwingByInv.h"
+#include "lambert.hpp"
 #include "vector3d_helpers.hpp"
 
 using namespace multiple_gravity_assist;
@@ -88,15 +88,11 @@ gtoc1::gtoc1() noexcept
       bool longWay =
           cross_product(r[i], r[i + 1])[2] > 0 ? rev_flag[i] : !rev_flag[i];
 
-      // `a`, `p`, `theta` and `iter` are out-parameters of `LambertI`.
-      // They are never read, but required. :(
-      double a, p, theta;
-      int iter;
-      LambertI(r[i].data(), r[i + 1].data(), parameter[i + 1] * 24 * 60 * 60,
-               celestial_body::SUN.mu, longWay,
-               // OUTPUT
-               current_section_departure_velocity.data(),
-               current_section_arrival_velocity.data(), a, p, theta, iter);
+      lambert(r[i].data(), r[i + 1].data(), parameter[i + 1] * 24 * 60 * 60,
+              celestial_body::SUN.mu, longWay,
+              // OUTPUT
+              current_section_departure_velocity.data(),
+              current_section_arrival_velocity.data());
 
       if (i == 0) {
         // Earth launch
