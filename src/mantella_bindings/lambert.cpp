@@ -15,10 +15,6 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
         "ERROR in Lambert Solver: Negative Time in input.");
   }
 
-  int i;
-  double r2_vers[3];
-  double ih_dum[3], ih[3], dum[3];
-
   double R = sqrt(dot_product(r1, r1));
   double V = sqrt(mu / R);
   double T = R / V;
@@ -110,26 +106,19 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
   }
 
   // parameter of the solution
-  double vr1, vt1, vt2, vr2;
   double p = (r2_mod / (am * eta_squared)) * pow(sin(theta / 2), 2);
-  vr1 = (1 / (eta * sqrt(am))) * (2 * lambda * am - (lambda + x * eta));
-  vett(r1.data(), r2.data(), ih_dum);
-  vers(ih_dum, ih);
 
-  if (lw) {
-    for (i = 0; i < 3; i++) ih[i] = -ih[i];
-  }
+  std::array<double, 3> ih = unit_vector(cross_product(r1, r2));
+  if (lw) ih = mul(ih, -1);
 
-  vt1 = sqrt(p);
-  vett(ih, r1.data(), dum);
+  double vr1 = (1 / (eta * sqrt(am))) * (2 * lambda * am - (lambda + x * eta));
+  double vt1 = sqrt(p);
+  v1 = add(mul(r1, vr1), mul(cross_product(ih, r1), vt1));
 
-  for (i = 0; i < 3; i++) v1[i] = vr1 * r1[i] + vt1 * dum[i];
-
-  vt2 = vt1 / r2_mod;
-  vr2 = -vr1 + (vt1 - vt2) / tan(theta / 2);
-  vers(r2.data(), r2_vers);
-  vett(ih, r2_vers, dum);
-  for (i = 0; i < 3; i++) v2[i] = vr2 * r2[i] / r2_mod + vt2 * dum[i];
+  double vt2 = vt1 / r2_mod;
+  double vr2 = -vr1 + (vt1 - vt2) / tan(theta / 2);
+  v2 = add(div(mul(r2, vr2), r2_mod),
+           mul(cross_product(ih, unit_vector(r2)), vt2));
 
   v1 = mul(v1, V);
   v2 = mul(v2, V);
