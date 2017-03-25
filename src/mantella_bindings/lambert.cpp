@@ -6,10 +6,10 @@
 
 void multiple_gravity_assist::lambert(std::array<double, 3> r1,
                                       std::array<double, 3> r2, double t,
-                                      const double mu,         // INPUT
-                                      const int lw,            // INPUT
-                                      double* v1, double* v2)  // OUTPUT
-{
+                                      const double mu, const int lw,
+                                      // OUTPUT
+                                      std::array<double, 3>& v1,
+                                      std::array<double, 3>& v2) {
   double a, p, theta;
   int iter;
 

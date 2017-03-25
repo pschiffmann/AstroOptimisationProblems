@@ -14,5 +14,5 @@ namespace multiple_gravity_assist {
 void lambert(std::array<double, 3> r1_in, std::array<double, 3> r2_in, double t,
              const double mu, const int lw,
              // OUTPUT
-             double* v1, double* v2);
+             std::array<double, 3>& v1, std::array<double, 3>& v2);
 }

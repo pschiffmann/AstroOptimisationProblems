@@ -91,8 +91,8 @@ gtoc1::gtoc1() noexcept
       lambert(r[i], r[i + 1], parameter[i + 1] * 24 * 60 * 60,
               celestial_body::SUN.mu, longWay,
               // OUTPUT
-              current_section_departure_velocity.data(),
-              current_section_arrival_velocity.data());
+              current_section_departure_velocity,
+              current_section_arrival_velocity);
 
       if (i == 0) {
         // Earth launch
