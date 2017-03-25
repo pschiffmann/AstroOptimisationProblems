@@ -10,19 +10,12 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
                                       // OUTPUT
                                       std::array<double, 3>& v1,
                                       std::array<double, 3>& v2) {
-  double a, p, theta;
-  int iter;
-
-  double V, T,
-      r2_mod = 0.0,    // R2 module
-      dot_prod = 0.0,  // dot product
-      c,               // non-dimensional chord
-      s,               // non dimesnional semi-perimeter
-      am,              // minimum energy ellipse semi major axis
-      lambda,          // lambda parameter defined in Battin's Book
-      x, x1, x2, y1, y2, x_new = 0, y_new, err, alfa, beta, psi, eta, eta2,
-      sigma1, vr1, vt1, vt2, vr2, R = 0.0;
-  int i_count, i;
+  double c,    // non-dimensional chord
+      s,       // non dimesnional semi-perimeter
+      am,      // minimum energy ellipse semi major axis
+      lambda,  // lambda parameter defined in Battin's Book
+      x, alfa, beta, psi, eta, eta2, sigma1, vr1, vt1, vt2, vr2;
+  int i;
   const double tolerance = 1e-11;
   double r2_vers[3];
   double ih_dum[3], ih[3], dum[3];
@@ -37,27 +30,20 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
         "ERROR in Lambert Solver: Negative Time in input.");
   }
 
-  R = dot_product(r1, r1);
-
-  R = sqrt(R);
-  V = sqrt(mu / R);
-  T = R / V;
+  double R = sqrt(dot_product(r1, r1));
+  double V = sqrt(mu / R);
+  double T = R / V;
 
   // working with non-dimensional radii and time-of-flight
   t /= T;
-  for (i = 0; i < 3; i++)  // r1 dimension is 3
-  {
-    r1[i] /= R;
-    r2[i] /= R;
-    r2_mod += r2[i] * r2[i];
-  }
+  r1 = div(r1, R);
+  r2 = div(r2, R);
 
   // Evaluation of the relevant geometry parameters in non dimensional units
-  r2_mod = sqrt(r2_mod);
+  // R2 module
+  double r2_mod = sqrt(dot_product(r2, r2));
 
-  for (i = 0; i < 3; i++) dot_prod += (r1[i] * r2[i]);
-
-  theta = acos(dot_prod / r2_mod);
+  double theta = acos(dot_product(r1, r2) / r2_mod);
 
   if (lw) theta = 2 * acos(-1.0) - theta;
 
@@ -66,31 +52,30 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
   am = s / 2.0;
   lambda = sqrt(r2_mod) * cos(theta / 2.0) / s;
 
-  // We start finding the log(x+1) value of the solution conic:
-  // NO MULTI REV --> (1 SOL)
-  //	inn1=-.5233;    //first guess point
-  //  inn2=.5233;     //second guess point
-  x1 = log(0.4767);
-  x2 = log(1.5233);
-  y1 = log(x2tof(-.5233, s, c, lw)) - log(t);
-  y2 = log(x2tof(.5233, s, c, lw)) - log(t);
+  {
+    // We start finding the log(x+1) value of the solution conic:
+    // NO MULTI REV --> (1 SOL)
+    //	inn1=-.5233;    //first guess point
+    //  inn2=.5233;     //second guess point
+    double x1 = log(0.4767);
+    double x2 = log(1.5233);
+    double y1 = log(x2tof(-.5233, s, c, lw)) - log(t);
+    double y2 = log(x2tof(.5233, s, c, lw)) - log(t);
 
-  // Newton iterations
-  err = 1;
-  i_count = 0;
-  while ((err > tolerance) && (y1 != y2)) {
-    i_count++;
-    x_new = (x1 * y2 - y1 * x2) / (y2 - y1);
-    y_new = logf(x2tof(expf(x_new) - 1, s, c, lw)) -
-            logf(t);  //[MR] Why ...f() functions? Loss of data!
-    x1 = x2;
-    y1 = y2;
-    x2 = x_new;
-    y2 = y_new;
-    err = fabs(x1 - x_new);
+    // Newton iterations
+    double x_new = 0;
+    double err = 1;
+    while ((err > tolerance) && (y1 != y2)) {
+      x_new = (x1 * y2 - y1 * x2) / (y2 - y1);
+      double y_new = logf(x2tof(expf(x_new) - 1, s, c, lw)) - logf(t);
+      x1 = x2;
+      y1 = y2;
+      x2 = x_new;
+      y2 = y_new;
+      err = fabs(x1 - x_new);
+    }
+    x = expf(x_new) - 1;
   }
-  iter = i_count;
-  x = expf(x_new) - 1;  //[MR] Same here... expf -> exp
 
   // The solution has been evaluated in terms of log(x+1) or tan(x*pi/2), we
   // now need the conic. As for transfer angles near to pi the lagrange
@@ -99,7 +84,7 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
   // the transfer angle is exactly equal to pi, then the ih unit vector is not
   // determined. The remaining equations, though, are still valid.
 
-  a = am / (1 - x * x);
+  double a = am / (1 - x * x);
 
   // psi evaluation
   if (x < 1)  // ellipse
@@ -121,7 +106,7 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
   }
 
   // parameter of the solution
-  p = (r2_mod / (am * eta2)) * pow(sin(theta / 2), 2);
+  double p = (r2_mod / (am * eta2)) * pow(sin(theta / 2), 2);
   sigma1 = (1 / (eta * sqrt(am))) * (2 * lambda * am - (lambda + x * eta));
   vett(r1.data(), r2.data(), ih_dum);
   vers(ih_dum, ih);
@@ -142,10 +127,6 @@ void multiple_gravity_assist::lambert(std::array<double, 3> r1,
   vett(ih, r2_vers, dum);
   for (i = 0; i < 3; i++) v2[i] = vr2 * r2[i] / r2_mod + vt2 * dum[i];
 
-  for (i = 0; i < 3; i++) {
-    v1[i] *= V;
-    v2[i] *= V;
-  }
-  a *= R;
-  p *= R;
+  v1 = mul(v1, V);
+  v2 = mul(v2, V);
 }
