@@ -4,8 +4,7 @@
 #include <numeric>
 
 #include "../Pl_Eph_An.h"
-#include "PowSwingByInv.hpp"
-#include "lambert.hpp"
+#include "astro_helpers.hpp"
 #include "vector3d_helpers.hpp"
 
 using namespace multiple_gravity_assist;
