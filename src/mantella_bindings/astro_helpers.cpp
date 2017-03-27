@@ -158,3 +158,59 @@ std::pair<double, double> multiple_gravity_assist::PowSwingByInv(
 
   return {DV, rp};
 }
+
+std::pair<std::array<double, 3>, std::array<double, 3>>
+multiple_gravity_assist::conversion(const std::array<double, 6>& E,
+                                    const double mu) {
+  double a, e, i, omg, omp, theta;
+  double b, n;
+  double X_per[3], X_dotper[3];
+  double R[3][3];
+
+  a = E[0];
+  e = E[1];
+  i = E[2];
+  omg = E[3];
+  omp = E[4];
+  theta = E[5];
+
+  b = a * sqrt(1 - e * e);
+  n = sqrt(mu / pow(a, 3));
+
+  const double sin_theta = sin(theta);
+  const double cos_theta = cos(theta);
+
+  X_per[0] = a * (cos_theta - e);
+  X_per[1] = b * sin_theta;
+
+  X_dotper[0] = -(a * n * sin_theta) / (1 - e * cos_theta);
+  X_dotper[1] = (b * n * cos_theta) / (1 - e * cos_theta);
+
+  const double cosomg = cos(omg);
+  const double cosomp = cos(omp);
+  const double sinomg = sin(omg);
+  const double sinomp = sin(omp);
+  const double cosi = cos(i);
+  const double sini = sin(i);
+
+  R[0][0] = cosomg * cosomp - sinomg * sinomp * cosi;
+  R[0][1] = -cosomg * sinomp - sinomg * cosomp * cosi;
+
+  R[1][0] = sinomg * cosomp + cosomg * sinomp * cosi;
+  R[1][1] = -sinomg * sinomp + cosomg * cosomp * cosi;
+
+  R[2][0] = sinomp * sini;
+  R[2][1] = cosomp * sini;
+
+  std::pair<std::array<double, 3>, std::array<double, 3>> result;
+  // evaluate position and velocity
+  for (int i = 0; i < 3; i++) {
+    result.first[i] = 0;
+    result.second[i] = 0;
+    for (int j = 0; j < 2; j++) {
+      result.first[i] += R[i][j] * X_per[j];
+      result.second[i] += R[i][j] * X_dotper[j];
+    }
+  }
+  return result;
+}

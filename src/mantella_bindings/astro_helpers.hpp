@@ -11,7 +11,7 @@ typedef struct lambert_solution {
 } lambert_solution;
 
 /**
- * This function an adapted version of function `LambertI` in file
+ * This function is an adapted version of function `LambertI` in file
  * `src/Lambert.h`. For more details and documentation, please take a look at
  * the original file.
  *
@@ -22,11 +22,20 @@ lambert_solution lambert(std::array<double, 3> r1_in,
                          const int lw);
 
 /**
- * This function an adapted version of function `PowSwingByInv` in file
+ * This function is an adapted version of function `PowSwingByInv` in file
  * `src/PowSwingByInv.h`.
  *
  * Returns a tuple (DV, rp).
  */
 std::pair<double, double> PowSwingByInv(const double Vin, const double Vout,
                                         const double alpha);
+
+/**
+ * This function is an adapted version of function `Conversion` in file
+ * `src/Astro_Functions.h`.
+ *
+ * Returns a tuple (position, velocity).
+ */
+std::pair<std::array<double, 3>, std::array<double, 3>> conversion(
+    const std::array<double, 6>& E, const double mu);
 }
