@@ -4,7 +4,7 @@
 #include <numeric>
 
 #include "../Pl_Eph_An.h"
-#include "../PowSwingByInv.h"
+#include "PowSwingByInv.hpp"
 #include "lambert.hpp"
 #include "vector3d_helpers.hpp"
 
@@ -88,11 +88,11 @@ gtoc1::gtoc1() noexcept
       bool longWay =
           cross_product(r[i], r[i + 1])[2] > 0 ? rev_flag[i] : !rev_flag[i];
 
-      const auto solution =
+      const auto lambert_solution =
           lambert(r[i], r[i + 1], parameter[i + 1] * 24 * 60 * 60,
                   celestial_body::SUN.mu, longWay);
-      current_section_departure_velocity = solution.departure_velocity;
-      current_section_arrival_velocity = solution.arrival_velocity;
+      current_section_departure_velocity = lambert_solution.departure_velocity;
+      current_section_arrival_velocity = lambert_solution.arrival_velocity;
 
       if (i == 0) {
         // Earth launch
@@ -102,12 +102,13 @@ gtoc1::gtoc1() noexcept
         double Vout = norm(sub(current_section_departure_velocity, v[i]));
 
         // calculation of delta V at pericenter
-        PowSwingByInv(
+        const auto swing_by_solution = PowSwingByInv(
             Vin, Vout,
             acos(dot_product(sub(last_section_arrival_velocity, v[i]),
                              sub(current_section_departure_velocity, v[i])) /
-                 (Vin * Vout)),
-            DV[i], rp[i - 1]);
+                 (Vin * Vout)));
+        DV[i] = swing_by_solution.first;
+        rp[i - 1] = swing_by_solution.second;
         rp[i - 1] *= sequence[i]->mu;
       }
     }

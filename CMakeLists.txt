@@ -18,6 +18,7 @@ add_executable(gtoc1
 
   src/mantella_bindings/gtoc1.cpp
   src/mantella_bindings/lambert.cpp
+  src/mantella_bindings/PowSwingByInv.cpp
   src/mantella_bindings/vector3d_helpers.cpp
   src/mantella_bindings/main.cpp
 )
