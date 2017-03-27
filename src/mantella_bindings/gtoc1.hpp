@@ -21,7 +21,6 @@ struct celestial_body {
   double mu;
   double penalty;
   double penalty_coefficient;
-  unsigned char distance_from_sun;
 
   /**
    * This function is an adapted version of function
@@ -33,8 +32,8 @@ struct celestial_body {
       const double mjd2000) const;
 
  private:
-  celestial_body(double mu, double penalty, double penalty_coefficient,
-                 unsigned char distance_from_sun) noexcept;
+  celestial_body(double mu, double penalty,
+                 double penalty_coefficient) noexcept;
 };
 
 struct asteroid {
