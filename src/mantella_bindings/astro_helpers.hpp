@@ -38,4 +38,10 @@ std::pair<double, double> PowSwingByInv(const double Vin, const double Vout,
  */
 std::pair<std::array<double, 3>, std::array<double, 3>> conversion(
     const std::array<double, 6>& E, const double mu);
+
+/**
+ * This function is an adapted version of function `Mean2Eccentric` in file
+ * `src/Astro_Functions.h`.
+ */
+double mean_to_eccentric(const double m, const double e);
 }

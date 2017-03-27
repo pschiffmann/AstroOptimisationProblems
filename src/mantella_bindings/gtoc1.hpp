@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <utility>
 
 #include <mantella0>
 
@@ -22,17 +23,36 @@ struct celestial_body {
   double penalty_coefficient;
   unsigned char distance_from_sun;
 
+  /**
+   * This function is an adapted version of function
+   * `Planet_Ephemerides_Analytical` in file `src/Pl_Eph_An.h`.
+   *
+   * Returns a tuple (position, velocity).
+   */
+  std::pair<std::array<double, 3>, std::array<double, 3>> ephemeris(
+      const double mjd2000) const;
+
  private:
   celestial_body(double mu, double penalty, double penalty_coefficient,
                  unsigned char distance_from_sun) noexcept;
 };
 
 struct asteroid {
+ public:
   asteroid(std::array<double, 6> keplerian, double epoch, double mu) noexcept;
 
   std::array<double, 6> keplerian;
   double epoch;
   double mu;
+
+  /**
+   * This function is an adapted version of function `Custom_Eph` in file
+   * `src/Pl_Eph_An.h`.
+   *
+   * Returns a tuple (position, velocity).
+   */
+  std::pair<std::array<double, 3>, std::array<double, 3>> ephemeris(
+      const double jd) const;
 };
 
 /**

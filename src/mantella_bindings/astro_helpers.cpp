@@ -214,3 +214,8 @@ multiple_gravity_assist::conversion(const std::array<double, 6>& E,
   }
   return result;
 }
+
+double multiple_gravity_assist::mean_to_eccentric(const double m,
+                                                  const double e) {
+  return Mean2Eccentric(m, e);
+}
